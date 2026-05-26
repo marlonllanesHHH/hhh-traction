@@ -11,8 +11,10 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
+    // Initial session check
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('INITIAL SESSION:', session);
+
       setUser(session?.user ?? null);
 
       if (session?.user) {
@@ -22,15 +24,19 @@ export const AuthProvider = ({ children }) => {
       }
     });
 
-    // Listen for auth changes
+    // Auth state listener
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('AUTH EVENT:', event);
+      console.log('AUTH SESSION:', session);
+
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        await fetchProfile(session.user.id);
+        fetchProfile(session.user.id);
       } else {
+        setUser(null);
         setProfile(null);
         setLoading(false);
       }
@@ -40,12 +46,20 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const fetchProfile = async (userId) => {
+    console.log('FETCH PROFILE STARTED');
+
+    setLoading(true);
+
     try {
+      console.log('CALLING SUPABASE');
+
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
+
+      console.log('SUPABASE FINISHED');
 
       console.log('PROFILE DATA:', data);
       console.log('PROFILE ERROR:', error);
