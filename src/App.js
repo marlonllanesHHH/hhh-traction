@@ -51,8 +51,20 @@ function ProtectedRoute({ children }) {
 function AppRoutes() {
   const { user, loading } = useAuth();
 
-  if (loading) return null;
-
+if (loading) {
+  return (
+    <div style={{
+      height: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: '#111',
+      color: 'white'
+    }}>
+      Loading...
+    </div>
+  );
+}
   return (
     <Routes>
       <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />

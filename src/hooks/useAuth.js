@@ -41,7 +41,9 @@ export const AuthProvider = ({ children }) => {
         .select('*')
         .eq('id', userId)
         .single();
-
+console.log('PROFILE DATA:', data);
+console.log('PROFILE ERROR:', error);
+console.log('ROLE:', data?.role);
       if (error) throw error;
       setProfile(data);
     } catch (err) {
