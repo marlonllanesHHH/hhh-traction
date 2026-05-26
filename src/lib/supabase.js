@@ -16,7 +16,6 @@ export const signInWithGoogle = async () => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      hd: 'historichamptonhouse.org', // restrict to HHH domain
       redirectTo: window.location.origin + '/dashboard',
     },
   });
