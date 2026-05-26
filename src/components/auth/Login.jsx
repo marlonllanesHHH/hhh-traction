@@ -68,8 +68,8 @@ export default function Login() {
           </button>
 
           <div className="login-restriction">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Restricted to <strong>@historichamptonhouse.org</strong> accounts only
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Only <strong>@historichamptonhouse.org</strong> accounts
           </div>
         </div>
         <p className="login-footer">© {new Date().getFullYear()} Historic Hampton House. All rights reserved.</p>
