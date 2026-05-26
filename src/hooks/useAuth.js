@@ -14,22 +14,27 @@ export const AuthProvider = ({ children }) => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
-      else setLoading(false);
+
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setLoading(false);
+      }
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-        } else {
-          setProfile(null);
-          setLoading(false);
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        await fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+        setLoading(false);
       }
-    );
+    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -41,14 +46,22 @@ export const AuthProvider = ({ children }) => {
         .select('*')
         .eq('id', userId)
         .single();
-console.log('PROFILE DATA:', data);
-console.log('PROFILE ERROR:', error);
-console.log('ROLE:', data?.role);
-      if (error) throw error;
+
+      console.log('PROFILE DATA:', data);
+      console.log('PROFILE ERROR:', error);
+      console.log('ROLE:', data?.role);
+
+      if (error) {
+        console.error('PROFILE ERROR:', error);
+        setLoading(false);
+        return;
+      }
+
       setProfile(data);
+      setLoading(false);
+
     } catch (err) {
       console.error('Error fetching profile:', err);
-    } finally {
       setLoading(false);
     }
   };
@@ -63,5 +76,27 @@ console.log('ROLE:', data?.role);
     refreshProfile: () => user && fetchProfile(user.id),
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  if (loading) {
+    return (
+      <div
+        style={{
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#111',
+          color: 'white',
+          fontSize: '18px',
+        }}
+      >
+        Loading...
+      </div>
+    );
+  }
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
