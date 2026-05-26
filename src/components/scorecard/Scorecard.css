@@ -1,0 +1,92 @@
+.scorecard {}
+
+.scorecard-toolbar {
+  margin-bottom: 16px;
+}
+
+.scorecard-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-200);
+}
+
+.scorecard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  min-width: 800px;
+}
+
+.scorecard-table thead th {
+  background: var(--gray-50);
+  padding: 10px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--gray-200);
+  white-space: nowrap;
+  text-align: center;
+}
+
+.scorecard-table thead th.metric-col { text-align: left; min-width: 180px; }
+
+.week-col { min-width: 72px; }
+.current-week { background: rgba(26,155,161,0.05) !important; }
+
+.scorecard-table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--gray-100);
+  text-align: center;
+}
+
+.scorecard-table tbody tr:last-child td { border-bottom: none; }
+.scorecard-table tbody tr:hover { background: var(--gray-50); }
+
+.metric-name-cell { text-align: left !important; }
+.metric-name { font-weight: 500; color: var(--gray-800); }
+
+.owner-cell { color: var(--gray-500); font-size: 0.8125rem; white-space: nowrap; }
+
+.goal-cell {}
+.goal-badge {
+  display: inline-flex;
+  padding: 2px 8px;
+  background: var(--gray-100);
+  border-radius: 4px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--gray-600);
+}
+
+.value-cell {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.value-cell.on-target { background: #f0fdf4; }
+.value-cell.on-target:hover { background: #dcfce7; }
+.value-cell.off-target { background: #fff5f5; }
+.value-cell.off-target:hover { background: #fee2e2; }
+.value-cell:hover:not(.on-target):not(.off-target) { background: var(--teal-pale); }
+
+.entry-value {
+  font-weight: 500;
+  color: var(--gray-700);
+  font-size: 0.875rem;
+}
+
+.value-cell.on-target .entry-value { color: #166534; }
+.value-cell.off-target .entry-value { color: #991b1b; }
+
+.entry-input {
+  width: 60px;
+  border: 1.5px solid var(--teal);
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 0.875rem;
+  text-align: center;
+  background: white;
+  outline: none;
+}
