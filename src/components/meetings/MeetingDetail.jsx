@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
+import { getRandomIcebreaker } from '../../lib/icebreakers';
 import Scorecard from '../scorecard/Scorecard';
 import RockReview from '../rocks/RockReview';
 import IssuesList from '../issues/IssuesList';
@@ -30,7 +31,7 @@ export default function MeetingDetail() {
   const [activeSection, setActiveSection] = useState('segue');
   const [inSession, setInSession] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [icebreaker] = useState('Share one professional and one personal win from the past 7 days.');
+  const [icebreaker, setIcebreaker] = useState(() => getRandomIcebreaker());
 
   useEffect(() => { fetchMeeting(); }, [id]);
 
@@ -92,7 +93,6 @@ export default function MeetingDetail() {
 
   return (
     <div className="meeting-detail fade-in">
-      {/* Header */}
       <div className="meeting-detail-header">
         <button className="btn btn-ghost back-btn" onClick={() => navigate('/meetings')}>
           ← Back
@@ -118,7 +118,6 @@ export default function MeetingDetail() {
         </div>
       </div>
 
-      {/* Section tabs */}
       <div className="section-tabs">
         {SECTIONS.map(s => (
           <button
@@ -132,7 +131,6 @@ export default function MeetingDetail() {
         ))}
       </div>
 
-      {/* Section content */}
       <div className="section-content card">
         <div className="section-header">
           <h2>{section?.label}</h2>
@@ -147,6 +145,7 @@ export default function MeetingDetail() {
             onToggleAttendance={toggleAttendance}
             onAddAttendee={addAttendee}
             icebreaker={icebreaker}
+            onShuffleIcebreaker={() => setIcebreaker(prev => getRandomIcebreaker(prev))}
             meetingId={id}
           />
         )}
@@ -163,7 +162,7 @@ export default function MeetingDetail() {
   );
 }
 
-function SegueSection({ attendees, allProfiles, attendance, onToggleAttendance, onAddAttendee, icebreaker, meetingId }) {
+function SegueSection({ attendees, allProfiles, attendance, onToggleAttendance, onAddAttendee, icebreaker, onShuffleIcebreaker }) {
   const [showAddAttendee, setShowAddAttendee] = useState(false);
 
   return (
@@ -192,9 +191,7 @@ function SegueSection({ attendees, allProfiles, attendance, onToggleAttendance, 
               <option value="" disabled>Select team member...</option>
               {allProfiles
                 .filter(p => !attendees.find(a => a.user_id === p.id))
-                .map(p => (
-                  <option key={p.id} value={p.id}>{p.full_name}</option>
-                ))}
+                .map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
             </select>
           </div>
         )}
@@ -204,7 +201,12 @@ function SegueSection({ attendees, allProfiles, attendance, onToggleAttendance, 
       </div>
 
       <div className="icebreaker-card">
-        <div className="icebreaker-label">Icebreaker Question</div>
+        <div className="icebreaker-header">
+          <div className="icebreaker-label">🎲 Icebreaker Question</div>
+          <button className="icebreaker-shuffle" onClick={onShuffleIcebreaker} title="New question">
+            <ShuffleIcon /> New question
+          </button>
+        </div>
         <div className="icebreaker-text">{icebreaker}</div>
       </div>
     </div>
@@ -288,29 +290,15 @@ function ConcludeSection({ onEnd, inSession, sessionId }) {
       <h4>Rate this meeting</h4>
       <div className="rating-row">
         {[1,2,3,4,5,6,7,8,9,10].map(n => (
-          <button
-            key={n}
-            className={`rating-btn ${rating >= n ? 'selected' : ''}`}
-            onClick={() => setRating(n)}
-          >
-            {n}
-          </button>
+          <button key={n} className={`rating-btn ${rating >= n ? 'selected' : ''}`} onClick={() => setRating(n)}>{n}</button>
         ))}
       </div>
       <div className="form-group" style={{marginTop:20}}>
         <label className="form-label">Meeting Notes (optional)</label>
-        <textarea
-          className="form-input"
-          rows={4}
-          value={notes}
-          onChange={e => setNotes(e.target.value)}
-          placeholder="Capture any final notes..."
-        />
+        <textarea className="form-input" rows={4} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Capture any final notes..." />
       </div>
       {inSession && (
-        <button className="btn btn-danger" onClick={saveAndEnd} style={{marginTop:8}}>
-          End Meeting & Save
-        </button>
+        <button className="btn btn-danger" onClick={saveAndEnd} style={{marginTop:8}}>End Meeting & Save</button>
       )}
     </div>
   );
@@ -319,3 +307,4 @@ function ConcludeSection({ onEnd, inSession, sessionId }) {
 function PlayIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><polygon points="5 3 19 12 5 21 5 3"/></svg>; }
 function StopIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>; }
 function ClockIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>; }
+function ShuffleIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>; }
