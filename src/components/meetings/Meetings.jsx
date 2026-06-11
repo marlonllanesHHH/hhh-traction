@@ -9,6 +9,7 @@ export default function Meetings() {
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const { profile, isAdmin } = useAuth();
   const navigate = useNavigate();
 
@@ -24,6 +25,12 @@ export default function Meetings() {
     setLoading(false);
   };
 
+  const deleteMeeting = async (id) => {
+    await supabase.from('meetings').delete().eq('id', id);
+    setConfirmDelete(null);
+    fetchMeetings();
+  };
+
   return (
     <div className="meetings-page fade-in">
       <div className="page-header">
@@ -31,11 +38,9 @@ export default function Meetings() {
           <h1>L10 Meetings</h1>
           <p>Run structured Level-10 Meetings with live collaboration</p>
         </div>
-        {isAdmin && (
-          <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
-            <PlusIcon /> New Meeting
-          </button>
-        )}
+        <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
+          <PlusIcon /> New Meeting
+        </button>
       </div>
 
       {loading ? (
@@ -45,34 +50,65 @@ export default function Meetings() {
           <CalIcon />
           <h3>No meetings yet</h3>
           <p>Create your first L10 Meeting to get started</p>
-          {isAdmin && (
-            <button className="btn btn-primary" style={{marginTop:16}} onClick={() => setShowCreate(true)}>
-              Create Meeting
-            </button>
-          )}
+          <button className="btn btn-primary" style={{marginTop:16}} onClick={() => setShowCreate(true)}>
+            Create Meeting
+          </button>
         </div>
       ) : (
         <div className="meetings-grid">
           {meetings.map(m => (
-            <div key={m.id} className="meeting-card card" onClick={() => navigate(`/meetings/${m.id}`)}>
-              <div className="meeting-card-header">
-                <div className="meeting-card-icon">
-                  <CalIcon />
+            <div key={m.id} className="meeting-card card">
+              {/* Delete button top right — stops propagation so card click doesn't fire */}
+              <button
+                className="meeting-delete-btn"
+                onClick={e => { e.stopPropagation(); setConfirmDelete(m); }}
+                title="Delete meeting"
+              >
+                <TrashIcon />
+              </button>
+
+              {/* Card body navigates to meeting */}
+              <div onClick={() => navigate(`/meetings/${m.id}`)}>
+                <div className="meeting-card-header">
+                  <div className="meeting-card-icon"><CalIcon /></div>
+                  <span className={`badge badge-${m.status === 'in_session' ? 'green' : 'gray'}`}>
+                    {m.status === 'in_session' ? '● Live' : 'Not In Session'}
+                  </span>
                 </div>
-                <span className={`badge badge-${m.status === 'in_session' ? 'green' : 'gray'}`}>
-                  {m.status === 'in_session' ? '● Live' : 'Not In Session'}
-                </span>
-              </div>
-              <h3 className="meeting-card-name">{m.name}</h3>
-              <p className="meeting-card-meta">
-                Created {format(new Date(m.created_at), 'M/d/yyyy')}
-              </p>
-              <div className="meeting-card-footer">
-                <span><PersonIcon /> {m.attendees?.[0]?.count || 0} attendees</span>
-                <span><TimeIcon /> {m.duration_minutes} min</span>
+                <h3 className="meeting-card-name">{m.name}</h3>
+                <p className="meeting-card-meta">
+                  Created {format(new Date(m.created_at), 'M/d/yyyy')}
+                </p>
+                <div className="meeting-card-footer">
+                  <span><PersonIcon /> {m.attendees?.[0]?.count || 0} attendees</span>
+                  <span><TimeIcon /> {m.duration_minutes} min</span>
+                </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Confirm delete modal */}
+      {confirmDelete && (
+        <div className="modal-overlay" onClick={() => setConfirmDelete(null)}>
+          <div className="modal" style={{maxWidth:400}} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Delete Meeting</h3>
+              <button className="btn-ghost" onClick={() => setConfirmDelete(null)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <p style={{fontSize:'0.9375rem',color:'var(--gray-700)',lineHeight:1.6}}>
+                Are you sure you want to delete <strong>{confirmDelete.name}</strong>? This will also delete all sessions, scorecard data, rocks, todos, and issues associated with this meeting.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setConfirmDelete(null)}>Cancel</button>
+              <button className="btn btn-danger" onClick={() => deleteMeeting(confirmDelete.id)}>
+                Yes, Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -100,10 +136,7 @@ function CreateMeetingModal({ onClose, onCreated, createdBy }) {
   const handleSubmit = async () => {
     if (!form.name.trim()) return;
     setLoading(true);
-    const { error } = await supabase.from('meetings').insert({
-      ...form,
-      created_by: createdBy,
-    });
+    const { error } = await supabase.from('meetings').insert({ ...form, created_by: createdBy });
     setLoading(false);
     if (!error) onCreated();
   };
@@ -118,12 +151,7 @@ function CreateMeetingModal({ onClose, onCreated, createdBy }) {
         <div className="modal-body">
           <div className="form-group">
             <label className="form-label">Meeting Name *</label>
-            <input
-              className="form-input"
-              value={form.name}
-              onChange={e => setForm({...form, name: e.target.value})}
-              placeholder="e.g., Leadership L10, Marketing Team..."
-            />
+            <input className="form-input" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Leadership L10, Marketing Team..." />
           </div>
           <div className="form-group">
             <label className="form-label">Type</label>
@@ -136,12 +164,7 @@ function CreateMeetingModal({ onClose, onCreated, createdBy }) {
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
             <div className="form-group">
               <label className="form-label">Duration (minutes)</label>
-              <input
-                className="form-input"
-                type="number"
-                value={form.duration_minutes}
-                onChange={e => setForm({...form, duration_minutes: parseInt(e.target.value)})}
-              />
+              <input className="form-input" type="number" value={form.duration_minutes} onChange={e => setForm({...form, duration_minutes: parseInt(e.target.value)})} />
             </div>
             <div className="form-group">
               <label className="form-label">Cadence</label>
@@ -154,13 +177,7 @@ function CreateMeetingModal({ onClose, onCreated, createdBy }) {
           </div>
           <div className="form-group">
             <label className="form-label">Description</label>
-            <textarea
-              className="form-input"
-              rows={3}
-              value={form.description}
-              onChange={e => setForm({...form, description: e.target.value})}
-              placeholder="Optional description..."
-            />
+            <textarea className="form-input" rows={3} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Optional description..." />
           </div>
         </div>
         <div className="modal-footer">
@@ -179,3 +196,4 @@ function CalIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="current
 function PersonIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>; }
 function TimeIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>; }
 function CloseIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>; }
+function TrashIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>; }
