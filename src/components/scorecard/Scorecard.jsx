@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { format, startOfWeek, subWeeks } from 'date-fns';
 import './Scorecard.css';
 
-const WEEKS = 8; // Show 8 weeks of data
+const WEEKS = 8;
 
 export default function Scorecard({ meetingId }) {
   const { profile } = useAuth();
@@ -13,7 +13,8 @@ export default function Scorecard({ meetingId }) {
   const [weekStarts, setWeekStarts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddMetric, setShowAddMetric] = useState(false);
-  const [editEntry, setEditEntry] = useState(null); // {metricId, weekStart}
+  const [editEntry, setEditEntry] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   useEffect(() => {
     const weeks = [];
@@ -27,17 +28,15 @@ export default function Scorecard({ meetingId }) {
   const fetchData = async () => {
     const [metricsRes, entriesRes] = await Promise.all([
       supabase.from('scorecard_metrics').select('*, owner:profiles(full_name)').eq('meeting_id', meetingId).eq('is_active', true).order('sort_order'),
-      supabase.from('scorecard_entries').select('*').in('metric_id', 
+      supabase.from('scorecard_entries').select('*').in('metric_id',
         (await supabase.from('scorecard_metrics').select('id').eq('meeting_id', meetingId)).data?.map(m => m.id) || []
       ),
     ]);
-
     const entriesMap = {};
     (entriesRes.data || []).forEach(e => {
       if (!entriesMap[e.metric_id]) entriesMap[e.metric_id] = {};
       entriesMap[e.metric_id][e.week_start] = e;
     });
-
     setMetrics(metricsRes.data || []);
     setEntries(entriesMap);
     setLoading(false);
@@ -63,14 +62,20 @@ export default function Scorecard({ meetingId }) {
     setEditEntry(null);
   };
 
+  const deleteMetric = async (id) => {
+    // Delete all entries first, then the metric
+    await supabase.from('scorecard_entries').delete().eq('metric_id', id);
+    await supabase.from('scorecard_metrics').delete().eq('id', id);
+    setConfirmDelete(null);
+    fetchData();
+  };
+
   if (loading) return <div className="loading-spinner" style={{margin:'40px auto'}} />;
 
   return (
     <div className="scorecard">
       <div className="scorecard-toolbar">
-        <button className="btn btn-primary" onClick={() => setShowAddMetric(true)}>
-          + Add Metric
-        </button>
+        <button className="btn btn-primary" onClick={() => setShowAddMetric(true)}>+ Add Metric</button>
       </div>
 
       {metrics.length === 0 ? (
@@ -92,61 +97,70 @@ export default function Scorecard({ meetingId }) {
                     {format(new Date(w + 'T00:00:00'), 'M/d')}
                   </th>
                 ))}
+                <th style={{width:40}}></th>
               </tr>
             </thead>
             <tbody>
               {metrics.map(m => (
                 <tr key={m.id}>
-                  <td className="metric-name-cell">
-                    <span className="metric-name">{m.title}</span>
-                  </td>
+                  <td className="metric-name-cell"><span className="metric-name">{m.title}</span></td>
                   <td className="owner-cell">{m.owner?.full_name || '—'}</td>
-                  <td className="goal-cell">
-                    <span className="goal-badge">
-                      {m.goal_operator} {m.goal}
-                    </span>
-                  </td>
+                  <td className="goal-cell"><span className="goal-badge">{m.goal_operator} {m.goal}</span></td>
                   {weekStarts.map((w, i) => {
                     const entry = entries[m.id]?.[w];
                     const onTarget = entry ? isOnTarget(m, entry.value) : null;
                     const isEditing = editEntry?.metricId === m.id && editEntry?.weekStart === w;
-
                     return (
-                      <td
-                        key={w}
-                        className={`value-cell ${i === 0 ? 'current-week' : ''} ${
-                          onTarget === true ? 'on-target' : onTarget === false ? 'off-target' : ''
-                        }`}
+                      <td key={w}
+                        className={`value-cell ${i === 0 ? 'current-week' : ''} ${onTarget === true ? 'on-target' : onTarget === false ? 'off-target' : ''}`}
                         onClick={() => setEditEntry({ metricId: m.id, weekStart: w })}
                       >
                         {isEditing ? (
-                          <input
-                            type="number"
-                            className="entry-input"
-                            defaultValue={entry?.value ?? ''}
-                            autoFocus
+                          <input type="number" className="entry-input"
+                            defaultValue={entry?.value ?? ''} autoFocus
                             onBlur={e => upsertEntry(m.id, w, e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') upsertEntry(m.id, w, e.target.value);
-                              if (e.key === 'Escape') setEditEntry(null);
-                            }}
+                            onKeyDown={e => { if (e.key === 'Enter') upsertEntry(m.id, w, e.target.value); if (e.key === 'Escape') setEditEntry(null); }}
                             onClick={e => e.stopPropagation()}
                           />
                         ) : (
                           <span className="entry-value">
                             {entry?.value !== null && entry?.value !== undefined
-                              ? m.unit === '%' ? `${entry.value}%` : entry.value
-                              : '—'
-                            }
+                              ? m.unit === '%' ? `${entry.value}%` : entry.value : '—'}
                           </span>
                         )}
                       </td>
                     );
                   })}
+                  <td onClick={e => e.stopPropagation()}>
+                    <button className="metric-delete-btn" onClick={() => setConfirmDelete(m)} title="Delete metric">
+                      <TrashIcon />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Confirm delete */}
+      {confirmDelete && (
+        <div className="modal-overlay" onClick={() => setConfirmDelete(null)}>
+          <div className="modal" style={{maxWidth:400}} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Delete Metric</h3>
+              <button className="btn-ghost" onClick={() => setConfirmDelete(null)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <p style={{fontSize:'0.9375rem',color:'var(--gray-700)',lineHeight:1.6}}>
+                Delete <strong>{confirmDelete.title}</strong>? This will also delete all historical entries for this metric.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setConfirmDelete(null)}>Cancel</button>
+              <button className="btn btn-danger" onClick={() => deleteMetric(confirmDelete.id)}>Yes, Delete</button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -232,3 +246,4 @@ function AddMetricModal({ meetingId, profileId, onClose, onAdded }) {
 }
 
 function MetricIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{width:40,height:40}}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>; }
+function TrashIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>; }

@@ -1,8 +1,6 @@
 .scorecard {}
 
-.scorecard-toolbar {
-  margin-bottom: 16px;
-}
+.scorecard-toolbar { margin-bottom: 16px; }
 
 .scorecard-table-wrap {
   overflow-x: auto;
@@ -31,7 +29,6 @@
 }
 
 .scorecard-table thead th.metric-col { text-align: left; min-width: 180px; }
-
 .week-col { min-width: 72px; }
 .current-week { background: rgba(26,155,161,0.05) !important; }
 
@@ -46,9 +43,7 @@
 
 .metric-name-cell { text-align: left !important; }
 .metric-name { font-weight: 500; color: var(--gray-800); }
-
 .owner-cell { color: var(--gray-500); font-size: 0.8125rem; white-space: nowrap; }
-
 .goal-cell {}
 .goal-badge {
   display: inline-flex;
@@ -60,23 +55,14 @@
   color: var(--gray-600);
 }
 
-.value-cell {
-  cursor: pointer;
-  transition: background 0.1s;
-}
-
+.value-cell { cursor: pointer; transition: background 0.1s; }
 .value-cell.on-target { background: #f0fdf4; }
 .value-cell.on-target:hover { background: #dcfce7; }
 .value-cell.off-target { background: #fff5f5; }
 .value-cell.off-target:hover { background: #fee2e2; }
 .value-cell:hover:not(.on-target):not(.off-target) { background: var(--teal-pale); }
 
-.entry-value {
-  font-weight: 500;
-  color: var(--gray-700);
-  font-size: 0.875rem;
-}
-
+.entry-value { font-weight: 500; color: var(--gray-700); font-size: 0.875rem; }
 .value-cell.on-target .entry-value { color: #166534; }
 .value-cell.off-target .entry-value { color: #991b1b; }
 
@@ -90,3 +76,58 @@
   background: white;
   outline: none;
 }
+
+/* Delete metric button */
+.metric-delete-btn {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  color: var(--gray-300);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  margin: 0 auto;
+}
+.metric-delete-btn:hover { background: #fee2e2; color: #dc2626; }
+
+/* Headline delete button */
+.headline-delete-btn {
+  width: 26px; height: 26px;
+  border-radius: 5px;
+  border: none;
+  background: none;
+  color: var(--gray-300);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.headline-delete-btn:hover { background: #fee2e2; color: #dc2626; }
+
+/* Icebreaker shuffle button */
+.icebreaker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.icebreaker-shuffle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: white;
+  border: 1.5px solid rgba(26,155,161,0.3);
+  border-radius: 6px;
+  color: var(--teal);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.icebreaker-shuffle:hover { background: var(--teal); color: white; }
