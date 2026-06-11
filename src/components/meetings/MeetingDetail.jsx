@@ -94,22 +94,16 @@ export default function MeetingDetail() {
   return (
     <div className="meeting-detail fade-in">
       <div className="meeting-detail-header">
-        <button className="btn btn-ghost back-btn" onClick={() => navigate('/meetings')}>
-          ← Back
-        </button>
+        <button className="btn btn-ghost back-btn" onClick={() => navigate('/meetings')}>← Back</button>
         <div className="meeting-detail-title">
           <h1>{meeting.name}</h1>
           <p>{meeting.duration_minutes} minute meeting · Created {new Date(meeting.created_at).toLocaleDateString()}</p>
         </div>
         <div className="meeting-actions">
           {inSession ? (
-            <button className="btn btn-danger" onClick={endMeeting}>
-              <StopIcon /> End Meeting
-            </button>
+            <button className="btn btn-danger" onClick={endMeeting}><StopIcon /> End Meeting</button>
           ) : (
-            <button className="btn btn-primary" onClick={startMeeting}>
-              <PlayIcon /> Start Meeting
-            </button>
+            <button className="btn btn-primary" onClick={startMeeting}><PlayIcon /> Start Meeting</button>
           )}
           <span className={`session-badge ${inSession ? 'live' : ''}`}>
             <span className="session-dot" />
@@ -120,11 +114,7 @@ export default function MeetingDetail() {
 
       <div className="section-tabs">
         {SECTIONS.map(s => (
-          <button
-            key={s.id}
-            className={`section-tab ${activeSection === s.id ? 'active' : ''}`}
-            onClick={() => setActiveSection(s.id)}
-          >
+          <button key={s.id} className={`section-tab ${activeSection === s.id ? 'active' : ''}`} onClick={() => setActiveSection(s.id)}>
             {s.label}
             <span className="section-time">{s.time} min</span>
           </button>
@@ -172,26 +162,18 @@ function SegueSection({ attendees, allProfiles, attendance, onToggleAttendance, 
         <div className="attendance-list">
           {attendees.map(a => (
             <label key={a.user_id} className="attendance-item">
-              <input
-                type="checkbox"
-                checked={attendance[a.user_id] ?? false}
-                onChange={() => onToggleAttendance(a.user_id)}
-              />
+              <input type="checkbox" checked={attendance[a.user_id] ?? false} onChange={() => onToggleAttendance(a.user_id)} />
               <span>{a.profile?.full_name}</span>
             </label>
           ))}
         </div>
         {showAddAttendee && (
           <div className="add-attendee-row">
-            <select
-              className="form-select"
-              onChange={e => { if (e.target.value) { onAddAttendee(e.target.value); setShowAddAttendee(false); }}}
-              defaultValue=""
-            >
+            <select className="form-select" onChange={e => { if (e.target.value) { onAddAttendee(e.target.value); setShowAddAttendee(false); }}} defaultValue="">
               <option value="" disabled>Select team member...</option>
-              {allProfiles
-                .filter(p => !attendees.find(a => a.user_id === p.id))
-                .map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+              {allProfiles.filter(p => !attendees.find(a => a.user_id === p.id)).map(p => (
+                <option key={p.id} value={p.id}>{p.full_name}</option>
+              ))}
             </select>
           </div>
         )}
@@ -203,7 +185,7 @@ function SegueSection({ attendees, allProfiles, attendance, onToggleAttendance, 
       <div className="icebreaker-card">
         <div className="icebreaker-header">
           <div className="icebreaker-label">🎲 Icebreaker Question</div>
-          <button className="icebreaker-shuffle" onClick={onShuffleIcebreaker} title="New question">
+          <button className="icebreaker-shuffle" onClick={onShuffleIcebreaker}>
             <ShuffleIcon /> New question
           </button>
         </div>
@@ -218,27 +200,22 @@ function Headlines({ sessionId, profileId }) {
   const [newHeadline, setNewHeadline] = useState('');
   const [type, setType] = useState('people');
 
-  useEffect(() => {
-    if (sessionId) fetchHeadlines();
-  }, [sessionId]);
+  useEffect(() => { if (sessionId) fetchHeadlines(); }, [sessionId]);
 
   const fetchHeadlines = async () => {
-    const { data } = await supabase
-      .from('headlines')
-      .select('*, owner:profiles(full_name)')
-      .eq('session_id', sessionId);
+    const { data } = await supabase.from('headlines').select('*, owner:profiles(full_name)').eq('session_id', sessionId);
     setHeadlines(data || []);
   };
 
   const addHeadline = async () => {
     if (!newHeadline.trim() || !sessionId) return;
-    await supabase.from('headlines').insert({
-      session_id: sessionId,
-      owner_id: profileId,
-      content: newHeadline,
-      type,
-    });
+    await supabase.from('headlines').insert({ session_id: sessionId, owner_id: profileId, content: newHeadline, type });
     setNewHeadline('');
+    fetchHeadlines();
+  };
+
+  const deleteHeadline = async (id) => {
+    await supabase.from('headlines').delete().eq('id', id);
     fetchHeadlines();
   };
 
@@ -249,13 +226,8 @@ function Headlines({ sessionId, profileId }) {
         <button className={`hl-tab ${type === 'business' ? 'active' : ''}`} onClick={() => setType('business')}>Business</button>
       </div>
       <div className="add-headline-row">
-        <input
-          className="form-input"
-          value={newHeadline}
-          onChange={e => setNewHeadline(e.target.value)}
-          placeholder="Share a headline..."
-          onKeyDown={e => e.key === 'Enter' && addHeadline()}
-        />
+        <input className="form-input" value={newHeadline} onChange={e => setNewHeadline(e.target.value)}
+          placeholder="Share a headline..." onKeyDown={e => e.key === 'Enter' && addHeadline()} />
         <button className="btn btn-primary" onClick={addHeadline}>Add</button>
       </div>
       {!sessionId && <p style={{color:'var(--gray-400)',fontSize:'0.875rem',textAlign:'center',padding:'20px 0'}}>Start the meeting to add headlines</p>}
@@ -263,10 +235,13 @@ function Headlines({ sessionId, profileId }) {
         {headlines.filter(h => h.type === type).map(h => (
           <div key={h.id} className="headline-item">
             <span className={`headline-type-dot ${h.type}`} />
-            <div>
+            <div style={{flex:1}}>
               <div className="headline-text">{h.content}</div>
               <div className="headline-owner">{h.owner?.full_name}</div>
             </div>
+            <button className="headline-delete-btn" onClick={() => deleteHeadline(h.id)} title="Delete">
+              <TrashIcon />
+            </button>
           </div>
         ))}
       </div>
@@ -297,9 +272,7 @@ function ConcludeSection({ onEnd, inSession, sessionId }) {
         <label className="form-label">Meeting Notes (optional)</label>
         <textarea className="form-input" rows={4} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Capture any final notes..." />
       </div>
-      {inSession && (
-        <button className="btn btn-danger" onClick={saveAndEnd} style={{marginTop:8}}>End Meeting & Save</button>
-      )}
+      {inSession && <button className="btn btn-danger" onClick={saveAndEnd} style={{marginTop:8}}>End Meeting & Save</button>}
     </div>
   );
 }
@@ -308,3 +281,4 @@ function PlayIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="curren
 function StopIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>; }
 function ClockIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>; }
 function ShuffleIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>; }
+function TrashIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>; }
